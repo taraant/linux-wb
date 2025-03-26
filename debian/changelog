@@ -1,3 +1,9 @@
+linux-wb (5.10.35-wb176) stable; urgency=medium
+
+  *  wb7: add prp hsr as module
+
+ -- Vladimir Romanov <v.romanov@wirenboard.com>  Wed, 26 Mar 2025 10:42:02 +0300
+
 linux-wb (5.10.35-wb175) stable; urgency=medium
 
   *  wb6: support docker 28.0.0
