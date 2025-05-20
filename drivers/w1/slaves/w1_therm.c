@@ -480,7 +480,6 @@ static const struct w1_family_ops w1_therm_fops = {
 	.remove_slave	= w1_therm_remove_slave,
 	.groups		= w1_therm_groups,
 	.chip_info	= W1_CHIPINFO,
-	.read_powermode = w1_therm_read_powermode
 };
 
 static const struct w1_family_ops w1_ds18s20_fops = {
@@ -488,7 +487,6 @@ static const struct w1_family_ops w1_ds18s20_fops = {
 	.remove_slave	= w1_therm_remove_slave,
 	.groups		= w1_ds18s20_groups,
 	.chip_info	= W1_CHIPINFO,
-	.read_powermode = w1_therm_read_powermode
 };
 
 static const struct w1_family_ops w1_ds28ea00_fops = {
@@ -496,7 +494,6 @@ static const struct w1_family_ops w1_ds28ea00_fops = {
 	.remove_slave	= w1_therm_remove_slave,
 	.groups		= w1_ds28ea00_groups,
 	.chip_info	= W1_CHIPINFO,
-	.read_powermode = w1_therm_read_powermode
 };
 
 /* Family binding operations struct */
