@@ -1,3 +1,9 @@
+linux-wb (6.8.0-wb143) stable; urgency=medium
+
+  * No changes
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Mon, 04 Aug 2025 14:11:00 +0400
+
 linux-wb (6.8.0-wb142) stable; urgency=medium
 
   * wb8: Disabled HDMI by default so that it could be enabled in overlays later
