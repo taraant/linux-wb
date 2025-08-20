@@ -1137,12 +1137,6 @@
 			#reset-cells = <1>;
 		};
 
-		prcm_ppu: power-controller@7010250 {
-			compatible = "allwinner,sun50i-h616-prcm-ppu";
-			reg = <0x07010250 0x10>;
-			#power-domain-cells = <1>;
-		};
-
 		nmi_intc: interrupt-controller@7010320 {
 			compatible = "allwinner,sun50i-h616-nmi",
 				     "allwinner,sun9i-a80-nmi";
