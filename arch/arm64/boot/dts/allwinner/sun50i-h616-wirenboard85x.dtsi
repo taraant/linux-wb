@@ -957,14 +957,6 @@
 				under_voltage_shutdown = <1>;
 			};
 
-			reg_dcdc7: dcdc7 {
-				regulator-name = "vdd-gpu";
-				regulator-enable-ramp-delay = <32000>;
-				regulator-min-microvolt = <810000>;
-				regulator-max-microvolt = <1080000>;
-				regulator-ramp-delay = <2500>;
-			};
-
 			reg_aldo1: aldo1 {
 				regulator-name = "aldo1";
 				regulator-min-microvolt = <700000>;
@@ -1338,6 +1330,6 @@
 };
 
 &gpu {
-	mali-supply = <&reg_dcdc7>;
-	status = "okay";
+	/* mali-supply = <&reg_dcdc7>; */
+	status = "disable";
 };

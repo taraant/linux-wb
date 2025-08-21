@@ -649,56 +649,82 @@ static int panfrost_probe(struct platform_device *pdev)
 	struct drm_device *ddev;
 	int err;
 
+	dev_info(&pdev->dev, "===> panfrost_probe start");
+
 	pfdev = devm_kzalloc(&pdev->dev, sizeof(*pfdev), GFP_KERNEL);
-	if (!pfdev)
+	if (!pfdev) {
+		dev_err(&pdev->dev, "Failed to allocate panfrost_device\n");
 		return -ENOMEM;
+	}
 
 	pfdev->pdev = pdev;
 	pfdev->dev = &pdev->dev;
 
+	dev_info(&pdev->dev, "Set up pfdev structure");
+
 	platform_set_drvdata(pdev, pfdev);
+	dev_info(&pdev->dev, "Set driver data");
 
 	pfdev->comp = of_device_get_match_data(&pdev->dev);
-	if (!pfdev->comp)
+	if (!pfdev->comp) {
+		dev_err(&pdev->dev, "No compatible component match found\n");
 		return -ENODEV;
+	}
+	dev_info(&pdev->dev, "Device match data found");
 
 	pfdev->coherent = device_get_dma_attr(&pdev->dev) == DEV_DMA_COHERENT;
+	dev_info(&pdev->dev, "DMA coherent: %s", pfdev->coherent ? "yes" : "no");
 
 	/* Allocate and initialize the DRM device. */
+	dev_info(&pdev->dev, "Allocating DRM device");
 	ddev = drm_dev_alloc(&panfrost_drm_driver, &pdev->dev);
-	if (IS_ERR(ddev))
+	if (IS_ERR(ddev)) {
+		dev_err(&pdev->dev, "Failed to allocate DRM device\n");
 		return PTR_ERR(ddev);
+	}
 
 	ddev->dev_private = pfdev;
 	pfdev->ddev = ddev;
 
+	dev_info(&pdev->dev, "DRM device allocated");
+
 	mutex_init(&pfdev->shrinker_lock);
 	INIT_LIST_HEAD(&pfdev->shrinker_list);
+	dev_info(&pdev->dev, "Initialized shrinker");
 
+	dev_info(&pdev->dev, "Calling panfrost_device_init()");
 	err = panfrost_device_init(pfdev);
 	if (err) {
+		dev_err(&pdev->dev, "Fatal error during GPU init (panfrost_device_init): %d\n", err);
 		if (err != -EPROBE_DEFER)
-			dev_err(&pdev->dev, "Fatal error during GPU init\n");
+			dev_err(&pdev->dev, "GPU init failed\n");
 		goto err_out0;
 	}
+	dev_info(&pdev->dev, "GPU init successful");
 
 	pm_runtime_set_active(pfdev->dev);
 	pm_runtime_mark_last_busy(pfdev->dev);
 	pm_runtime_enable(pfdev->dev);
 	pm_runtime_set_autosuspend_delay(pfdev->dev, 50); /* ~3 frames */
 	pm_runtime_use_autosuspend(pfdev->dev);
+	dev_info(&pdev->dev, "Runtime PM configured");
 
-	/*
-	 * Register the DRM device with the core and the connectors with
-	 * sysfs
-	 */
+	/* Register the DRM device */
+	dev_info(&pdev->dev, "Registering DRM device");
 	err = drm_dev_register(ddev, 0);
-	if (err < 0)
+	if (err < 0) {
+		dev_err(&pdev->dev, "Failed to register DRM device: %d\n", err);
 		goto err_out1;
+	}
+	dev_info(&pdev->dev, "DRM device registered");
 
+	dev_info(&pdev->dev, "Initializing GEM shrinker");
 	err = panfrost_gem_shrinker_init(ddev);
-	if (err)
+	if (err) {
+		dev_err(&pdev->dev, "Failed to initialize GEM shrinker: %d\n", err);
 		goto err_out2;
+	}
+	dev_info(&pdev->dev, "<=== panfrost_probe completed successfully");
 
 	return 0;
 
@@ -710,8 +736,11 @@ err_out1:
 	pm_runtime_set_suspended(pfdev->dev);
 err_out0:
 	drm_dev_put(ddev);
+	dev_err(&pdev->dev, "<=== panfrost_probe failed at cleanup, err=%d", err);
 	return err;
 }
+
+
 
 static void panfrost_remove(struct platform_device *pdev)
 {
