@@ -930,8 +930,9 @@
 
 			reg_dcdc4: dcdc4 {
 				regulator-name = "dcdc4";
-				regulator-min-microvolt = <500000>;
-				regulator-max-microvolt = <1540000>;
+                regulator-min-microvolt = <810000>;
+				regulator-init-microvolt = <900000>;
+				regulator-max-microvolt = <1080000>;
 				regulator-step-delay-us = <25>;
 				regulator-final-delay-us = <50>;
 				regulator-enable-ramp-delay = <1000>;
@@ -1330,6 +1331,6 @@
 };
 
 &gpu {
-	/* mali-supply = <&reg_dcdc7>; */
+	mali-supply = <&reg_dcdc4>;
 	status = "disable";
 };

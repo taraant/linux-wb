@@ -62,41 +62,55 @@ int panfrost_gpu_soft_reset(struct panfrost_device *pfdev)
 	int ret;
 	u32 val;
 
+	printk(KERN_EMERG "panfrost: >>> GPU SOFT RESET START\n");
+
+	printk(KERN_EMERG "panfrost: disabling all interrupts\n");
 	gpu_write(pfdev, GPU_INT_MASK, 0);
+
+	printk(KERN_EMERG "panfrost: clearing reset-completed interrupt\n");
 	gpu_write(pfdev, GPU_INT_CLEAR, GPU_IRQ_RESET_COMPLETED);
 
+	printk(KERN_EMERG "panfrost: clearing COMP_BIT_GPU (is_suspended)\n");
 	clear_bit(PANFROST_COMP_BIT_GPU, pfdev->is_suspended);
 
+	printk(KERN_EMERG "panfrost: issuing SOFT RESET\n");
 	gpu_write(pfdev, GPU_CMD, GPU_CMD_SOFT_RESET);
+
 	ret = readl_relaxed_poll_timeout(pfdev->iomem + GPU_INT_RAWSTAT,
-		val, val & GPU_IRQ_RESET_COMPLETED, 10, 10000);
+					 val, val & GPU_IRQ_RESET_COMPLETED, 10, 10000);
 
 	if (ret) {
-		dev_err(pfdev->dev, "gpu soft reset timed out, attempting hard reset\n");
+		printk(KERN_EMERG "panfrost: soft reset timed out, trying HARD RESET\n");
 
 		gpu_write(pfdev, GPU_CMD, GPU_CMD_HARD_RESET);
+
 		ret = readl_relaxed_poll_timeout(pfdev->iomem + GPU_INT_RAWSTAT, val,
 						 val & GPU_IRQ_RESET_COMPLETED, 100, 10000);
 		if (ret) {
-			dev_err(pfdev->dev, "gpu hard reset timed out\n");
+			printk(KERN_EMERG "panfrost: ERROR: hard reset timed out\n");
 			return ret;
+		} else {
+			printk(KERN_EMERG "panfrost: hard reset completed successfully\n");
 		}
+	} else {
+		printk(KERN_EMERG "panfrost: soft reset completed successfully\n");
 	}
 
+	printk(KERN_EMERG "panfrost: clearing all IRQs\n");
 	gpu_write(pfdev, GPU_INT_CLEAR, GPU_IRQ_MASK_ALL);
 
-	/* Only enable the interrupts we care about */
+	printk(KERN_EMERG "panfrost: enabling required IRQ masks\n");
 	gpu_write(pfdev, GPU_INT_MASK,
 		  GPU_IRQ_MASK_ERROR |
 		  GPU_IRQ_PERFCNT_SAMPLE_COMPLETED |
 		  GPU_IRQ_CLEAN_CACHES_COMPLETED);
 
-	/*
-	 * All in-flight jobs should have released their cycle
-	 * counter references upon reset, but let us make sure
-	 */
-	if (drm_WARN_ON(pfdev->ddev, atomic_read(&pfdev->cycle_counter.use_count) != 0))
+	if (drm_WARN_ON(pfdev->ddev, atomic_read(&pfdev->cycle_counter.use_count) != 0)) {
+		printk(KERN_EMERG "panfrost: WARN: cycle_counter.use_count != 0, resetting\n");
 		atomic_set(&pfdev->cycle_counter.use_count, 0);
+	}
+
+	printk(KERN_EMERG "panfrost: <<< GPU SOFT RESET DONE\n");
 
 	return 0;
 }
@@ -485,34 +499,52 @@ int panfrost_gpu_init(struct panfrost_device *pfdev)
 {
 	int err;
 
+	printk(KERN_EMERG "panfrost: >>> GPU INIT START\n");
+
+	printk(KERN_EMERG "panfrost: performing soft reset\n");
 	err = panfrost_gpu_soft_reset(pfdev);
-	if (err)
-		return err;
-
-	panfrost_gpu_init_features(pfdev);
-
-	err = dma_set_mask_and_coherent(pfdev->dev,
-		DMA_BIT_MASK(FIELD_GET(0xff00, pfdev->features.mmu_features)));
-	if (err)
-		return err;
-
-	dma_set_max_seg_size(pfdev->dev, UINT_MAX);
-
-	pfdev->gpu_irq = platform_get_irq_byname(to_platform_device(pfdev->dev), "gpu");
-	if (pfdev->gpu_irq < 0)
-		return pfdev->gpu_irq;
-
-	err = devm_request_irq(pfdev->dev, pfdev->gpu_irq, panfrost_gpu_irq_handler,
-			       IRQF_SHARED, KBUILD_MODNAME "-gpu", pfdev);
 	if (err) {
-		dev_err(pfdev->dev, "failed to request gpu irq");
+		printk(KERN_EMERG "panfrost: ERROR: soft reset failed: %d\n", err);
 		return err;
 	}
 
+	printk(KERN_EMERG "panfrost: initializing GPU feature registers\n");
+	panfrost_gpu_init_features(pfdev);
+
+	printk(KERN_EMERG "panfrost: setting DMA mask based on mmu_features = 0x%x\n",
+	       pfdev->features.mmu_features);
+	err = dma_set_mask_and_coherent(pfdev->dev,
+		DMA_BIT_MASK(FIELD_GET(0xff00, pfdev->features.mmu_features)));
+	if (err) {
+		printk(KERN_EMERG "panfrost: ERROR: dma_set_mask_and_coherent failed: %d\n", err);
+		return err;
+	}
+
+	printk(KERN_EMERG "panfrost: setting max segment size for DMA\n");
+	dma_set_max_seg_size(pfdev->dev, UINT_MAX);
+
+	printk(KERN_EMERG "panfrost: retrieving GPU IRQ\n");
+	pfdev->gpu_irq = platform_get_irq_byname(to_platform_device(pfdev->dev), "gpu");
+	if (pfdev->gpu_irq < 0) {
+		printk(KERN_EMERG "panfrost: ERROR: get_irq_byname 'gpu' failed: %d\n", pfdev->gpu_irq);
+		return pfdev->gpu_irq;
+	}
+
+	printk(KERN_EMERG "panfrost: requesting GPU IRQ handler for IRQ %d\n", pfdev->gpu_irq);
+	err = devm_request_irq(pfdev->dev, pfdev->gpu_irq, panfrost_gpu_irq_handler,
+			       IRQF_SHARED, KBUILD_MODNAME "-gpu", pfdev);
+	if (err) {
+		printk(KERN_EMERG "panfrost: ERROR: request_irq failed: %d\n", err);
+		return err;
+	}
+
+	printk(KERN_EMERG "panfrost: powering on GPU\n");
 	panfrost_gpu_power_on(pfdev);
 
+	printk(KERN_EMERG "panfrost: <<< GPU INIT SUCCESS\n");
 	return 0;
 }
+
 
 void panfrost_gpu_fini(struct panfrost_device *pfdev)
 {
