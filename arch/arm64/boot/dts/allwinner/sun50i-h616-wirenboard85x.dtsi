@@ -8,6 +8,7 @@
 
 #include "sun50i-h616.dtsi"
 #include "sun50i-h616-cpu-opp.dtsi"
+#include "sun50i-h616-gpu-opp.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
@@ -1331,6 +1332,6 @@
 };
 
 &gpu {
-	mali-supply = <&reg_dcdc4>;
-	status = "disable";
+    operating-points-v2 = <&gpu_opp_table>;
+	status = "okay";
 };
