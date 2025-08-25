@@ -1333,5 +1333,5 @@
 
 &gpu {
     operating-points-v2 = <&gpu_opp_table>;
-	status = "okay";
+	status = "disabled";
 };

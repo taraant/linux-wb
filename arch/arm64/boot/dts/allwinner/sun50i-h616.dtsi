@@ -224,9 +224,9 @@
 			clocks = <&ccu CLK_GPU0>, <&ccu CLK_BUS_GPU>;
 			clock-names = "core", "bus";
 			resets = <&ccu RST_BUS_GPU>;
-			status = "disabled";
-            mali-supply = <&reg_dcdc4>;
             #cooling-cells = <2>;
+            mali-supply = <&reg_dcdc4>;
+			status = "disabled";
 		};
 
 		video-codec@1c0e000 {
@@ -1294,7 +1294,7 @@
 		cpu-thermal {
 			polling-delay-passive = <500>;
 			polling-delay = <1000>;
-			thermal-sensors = <&ths 2>;
+			thermal-sensors = <&ths 0>;
 			sustainable-power = <1000>;
 
 			trips {
@@ -1316,49 +1316,62 @@
 			};
 		};
 
+		ddr-thermal {
+			polling-delay-passive = <0>;
+			polling-delay = <0>;
+			thermal-sensors = <&ths 1>;
+
+			trips {
+				ddr_temp_critical: ddr-trip-0 {
+					temperature = <110000>;
+					type = "critical";
+					hysteresis = <0>;
+				};
+			};
+		};
+
 		gpu-thermal {
 			polling-delay-passive = <500>;
-			polling-delay = <250>;
-			thermal-sensors = <&ths 0>;
+			polling-delay = <1000>;
+			thermal-sensors = <&ths 2>;
 			sustainable-power = <1100>;
 
 			trips {
-                gpu_temp_passive: gpu-passive {
-                    temperature = <75000>;
-                    hysteresis = <2000>;
-                    type = "passive";
-                };
-                gpu_temp_hot: gpu-hot {
-                    temperature = <85000>;
-                    hysteresis = <2000>;
-                    type = "hot";
-                };
-                gpu_temp_veryhot: gpu-veryhot {
-                    temperature = <95000>;
-                    hysteresis = <2000>;
-                    type = "critical";
-                };
-                gpu_temp_critical: gpu-critical {
-                    temperature = <110000>;
-                    type = "critical";
-                    hysteresis = <0>;
-                };
-
+				gpu_temp_threshold: gpu-trip-0 {
+					temperature = <65000>;
+					type = "passive";
+					hysteresis = <2000>;
+				};
+				gpu_temp_target: gpu-trip-1 {
+					temperature = <75000>;
+					type = "hot";
+					hysteresis = <2000>;
+				};
+				gpu_temp_hot: gpu-trip-2 {
+					temperature = <85000>;
+					type = "hot";
+					hysteresis = <2000>;
+				};
+				gpu_temp_critical: gpu-trip-3 {
+					temperature = <110000>;
+					type = "critical";
+					hysteresis = <0>;
+				};
 			};
 
             cooling-maps {
                 map0 {
-                    trip = <&gpu_temp_passive>;
+                    trip = <&gpu_temp_threshold>;
                     cooling-device = <&gpu THERMAL_NO_LIMIT 15>;
                 };
 
                 map1 {
-                    trip = <&gpu_temp_hot>;
+                    trip = <&gpu_temp_target>;
                     cooling-device = <&gpu THERMAL_NO_LIMIT 10>;
                 };
 
                 map2 {
-                    trip = <&gpu_temp_veryhot>;
+                    trip = <&gpu_temp_hot>;
                     cooling-device = <&gpu THERMAL_NO_LIMIT 5>;
                 };
 
@@ -1373,7 +1386,7 @@
 		ve-thermal {
 			polling-delay-passive = <0>;
 			polling-delay = <0>;
-			thermal-sensors = <&ths 1>;
+			thermal-sensors = <&ths 3>;
 
 			trips {
 				ve_temp_critical: ve-trip-0 {
@@ -1384,18 +1397,5 @@
 			};
 		};
 
-		ddr-thermal {
-			polling-delay-passive = <0>;
-			polling-delay = <0>;
-			thermal-sensors = <&ths 3>;
-
-			trips {
-				ddr_temp_critical: ddr-trip-0 {
-					temperature = <110000>;
-					type = "critical";
-					hysteresis = <0>;
-				};
-			};
-		};
 	};
 };
