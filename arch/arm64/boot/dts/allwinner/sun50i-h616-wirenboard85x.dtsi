@@ -1334,6 +1334,11 @@
 };
 
 &gpu {
+<<<<<<< HEAD
 	operating-points-v2 = <&gpu_opp_table>;
 	status = "okay";
+=======
+	/* mali-supply = <&reg_dcdc7>; */
+	status = "disable";
+>>>>>>> parent of 0d41db0f56ac (Add debut printk for panfrost)
 };

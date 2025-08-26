@@ -197,99 +197,71 @@ err:
 	return err;
 }
 
-
 int panfrost_device_init(struct panfrost_device *pfdev)
 {
 	int err;
-
-	printk(KERN_EMERG "panfrost: >>> DEVICE INIT START\n");
 
 	mutex_init(&pfdev->sched_lock);
 	INIT_LIST_HEAD(&pfdev->scheduled_jobs);
 	INIT_LIST_HEAD(&pfdev->as_lru_list);
 
 	spin_lock_init(&pfdev->as_lock);
+
 	spin_lock_init(&pfdev->cycle_counter.lock);
 
-	printk(KERN_EMERG "panfrost: initializing PM domain\n");
 	err = panfrost_pm_domain_init(pfdev);
-	if (err) {
-		printk(KERN_EMERG "panfrost: ERROR: PM domain init failed: %d\n", err);
+	if (err)
 		return err;
-	}
 
-	printk(KERN_EMERG "panfrost: initializing reset\n");
 	err = panfrost_reset_init(pfdev);
 	if (err) {
-		printk(KERN_EMERG "panfrost: ERROR: reset init failed: %d\n", err);
+		dev_err(pfdev->dev, "reset init failed %d\n", err);
 		goto out_pm_domain;
 	}
 
-	printk(KERN_EMERG "panfrost: initializing clocks\n");
 	err = panfrost_clk_init(pfdev);
 	if (err) {
-		printk(KERN_EMERG "panfrost: ERROR: clock init failed: %d\n", err);
+		dev_err(pfdev->dev, "clk init failed %d\n", err);
 		goto out_reset;
 	}
 
-	printk(KERN_EMERG "panfrost: initializing devfreq\n");
 	err = panfrost_devfreq_init(pfdev);
 	if (err) {
 		if (err != -EPROBE_DEFER)
-			printk(KERN_EMERG "panfrost: ERROR: devfreq init failed: %d\n", err);
+			dev_err(pfdev->dev, "devfreq init failed %d\n", err);
 		goto out_clk;
 	}
 
+	/* OPP will handle regulators */
 	if (!pfdev->pfdevfreq.opp_of_table_added) {
-		printk(KERN_EMERG "panfrost: initializing regulator (no OPP table)\n");
 		err = panfrost_regulator_init(pfdev);
-		if (err) {
-			printk(KERN_EMERG "panfrost: ERROR: regulator init failed: %d\n", err);
+		if (err)
 			goto out_devfreq;
-		}
-	} else {
-		printk(KERN_EMERG "panfrost: skipping regulator init (OPP table present)\n");
 	}
 
-	printk(KERN_EMERG "panfrost: mapping MMIO registers\n");
 	pfdev->iomem = devm_platform_ioremap_resource(pfdev->pdev, 0);
 	if (IS_ERR(pfdev->iomem)) {
 		err = PTR_ERR(pfdev->iomem);
-		printk(KERN_EMERG "panfrost: ERROR: ioremap failed: %d\n", err);
 		goto out_regulator;
 	}
 
-	printk(KERN_EMERG "panfrost: initializing GPU HW\n");
 	err = panfrost_gpu_init(pfdev);
-	if (err) {
-		printk(KERN_EMERG "panfrost: ERROR: GPU init failed: %d\n", err);
+	if (err)
 		goto out_regulator;
-	}
 
-	printk(KERN_EMERG "panfrost: initializing MMU\n");
 	err = panfrost_mmu_init(pfdev);
-	if (err) {
-		printk(KERN_EMERG "panfrost: ERROR: MMU init failed: %d\n", err);
+	if (err)
 		goto out_gpu;
-	}
 
-	printk(KERN_EMERG "panfrost: initializing job subsystem\n");
 	err = panfrost_job_init(pfdev);
-	if (err) {
-		printk(KERN_EMERG "panfrost: ERROR: job init failed: %d\n", err);
+	if (err)
 		goto out_mmu;
-	}
 
-	printk(KERN_EMERG "panfrost: initializing performance counters\n");
 	err = panfrost_perfcnt_init(pfdev);
-	if (err) {
-		printk(KERN_EMERG "panfrost: ERROR: perf counter init failed: %d\n", err);
+	if (err)
 		goto out_job;
-	}
 
-	printk(KERN_EMERG "panfrost: <<< DEVICE INIT SUCCESS\n");
 	return 0;
-
 out_job:
 	panfrost_job_fini(pfdev);
 out_mmu:
@@ -306,7 +278,6 @@ out_reset:
 	panfrost_reset_fini(pfdev);
 out_pm_domain:
 	panfrost_pm_domain_fini(pfdev);
-	printk(KERN_EMERG "panfrost: <<< DEVICE INIT FAILED: %d\n", err);
 	return err;
 }
 
