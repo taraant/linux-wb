@@ -224,8 +224,9 @@
 			clocks = <&ccu CLK_GPU0>, <&ccu CLK_BUS_GPU>;
 			clock-names = "core", "bus";
 			resets = <&ccu RST_BUS_GPU>;
-            #cooling-cells = <2>;
-            mali-supply = <&reg_dcdc4>;
+			#cooling-cells = <2>;
+			mali-supply = <&reg_dcdc4>;
+			power-domains = <&prcm_ppu 2>;
 			status = "disabled";
 		};
 
