@@ -52,9 +52,28 @@
 		};
 	};
 
+	reserved-memory {
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x0 0x08000000>;
+			alignment = <0x0 0x00400000>;      // 128 Mib
+			linux,cma-default;
+		};
+
+		de_cma: de-cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x0 0x10000000>;           // 256 MiB
+			alignment = <0x0 0x00800000>;
+			};
+		};
+
+
 };
 
 &de {
+	memory-region = <&de_cma>;
 	status = "okay";
 };
 
@@ -67,4 +86,10 @@
 	hdmi_out_con: endpoint {
 		remote-endpoint = <&hdmi_con_in>;
 	};
+};
+
+&gpu {
+	// operating-points-v2 = <&gpu_opp_table>;
+	mali-supply = <&reg_dcdc4>;
+	status = "okay";
 };
